@@ -1,0 +1,53 @@
+#!/bin/bash
+#
+# Copyright (C) 2009 Mario Sanchez Prada.
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+
+if [ $# -ne 2 ]; then
+  echo "Usage: batt_tresholds <start_charging_treshold> <stop_charging_treshold>";
+  echo "  THIS COMMAND MUST BE RUN AS ROOT (or with sudo)"
+  exit 1;
+fi
+
+START_CHARGING=$1
+STOP_CHARGING=$2
+
+if [ $1 -lt 0 ]; then
+  START_CHARGING=0;
+elif [ $1 -gt 100 ]; then
+  START_CHARGING=100;
+else
+  START_CHARGING=$1;
+fi
+
+if [ $2 -lt 0 ]; then
+  STOP_CHARGING=0;
+elif [ $2 -gt 100 ]; then
+  STOP_CHARGING=100;
+else
+  STOP_CHARGING=$2;
+fi
+
+echo $START_CHARGING > /sys/devices/platform/smapi/BAT0/start_charge_thresh
+echo $STOP_CHARGING > /sys/devices/platform/smapi/BAT0/stop_charge_thresh 
+
+echo "Battery charging tresholds set to:"
+echo "    start charging at: $START_CHARGING"
+echo "     stop charging at: $STOP_CHARGING"
+exit 0

@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Copyright (C) 2012 Mario Sanchez Prada.
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+
+COMMITS_LIST="/tmp/wk-stats-commits"
+EMAILS_FILE="/tmp/wk-stats-emails"
+RESULTS_FILE="/tmp/wk-stats-results"
+
+if [ $# -lt 1 ]; then
+    echo "Date parameter missing"
+    exit 1;
+fi
+
+DATE=${1}
+rm -f ${COMMITS_FILE}
+rm -f ${EMAILS_FILE}
+
+# Get the list of commits out to a file
+git log --after="${DATE}" --stat | grep "^commit " | sed s/'commit '//g > ${COMMITS_LIST}
+
+# The right affiliation email addresses appear in the ChangeLogs, not
+# in commit message, so we need to inspect manually the commits. Argh!
+cat ${COMMITS_LIST} | while read commit; do
+    git show "$commit" | grep "^+20[0-1][0-9]" | grep -Eo '(@[a-zA-Z0-9.-]+)' | uniq >> ${EMAILS_FILE}
+done
+
+# Output the result stats (and log them to a file)
+cat $EMAILS_FILE | sort -n | uniq -c | sort -nr | tee ${RESULTS_FILE}

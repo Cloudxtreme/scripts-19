@@ -1,0 +1,161 @@
+#!/bin/bash
+#
+# Copyright (C) 2009 Mario Sanchez Prada.
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# bundle_subtitles_remote:  script to insert a local file with
+# subtitles into a video file in a remote server (like the slug :P),
+# taking care also of both copying the remote file to a local
+# temporary directory and copying back to the remote server as soon as
+# the reencoding has finished
+#
+# This script expects a font file for the subtitles under ~/.mplayer/subfont.ttf
+# You can do this to workaround it, in case you needed that:
+#
+# ln -s /usr/share/fonts/truetype/msttcorefonts/arial.ttf ~/.mplayer/subfont.ttf
+#
+# For compatiblity with the PS3, uses the msmpeg4 codec, as neither libxvid nor
+# mpeg4 codecs are properly recognized by the PS3
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+
+#-------------------------
+# CONFIGURABLE parameters
+#-------------------------
+
+# connection settings
+USER=mario
+IP=192.168.0.25
+SSH_PORT=6789
+
+# temporary path
+TMP_BASEDIR="/home/mario/.tmp"
+
+# mencoder settings
+VCODEC="msmpeg4" #compatibility with PS3
+VBITRATE=2500 # Use a higher value for more quality
+AUDIO_OPTS="-oac copy"
+VIDEO_OPTS="-ovc lavc -lavcopts vcodec=$VCODEC:vbitrate=$VBITRATE:autoaspect"
+
+
+#-----------------------------
+# NON CONFIGURABLE parameters
+#-----------------------------
+
+function usage ()
+{
+    echo "Usage: bundle_subtitles_remote <full_remote_path> " \
+        "<local_subtitle_file> [--1pass | --2passes (default)] [-v | --verbose]";
+}
+
+# get params
+if [ $# -lt 2 ]; then
+    usage
+    exit 1;
+fi
+SOURCE_PATH="$1"
+SUBTITLE_PATH="$2"
+
+# set default values
+TWO_PASSES=true
+OUTPUT_FILE="/dev/null"
+SOURCE_FILE="$(basename "$SOURCE_PATH")"
+SOURCE_DIR="$(dirname "$SOURCE_PATH")"
+SUBTITLE_FILE="$(basename "$SUBTITLE_PATH")"
+SUBTITLE_DIR="$(dirname "$SUBTITLE_PATH")"
+SCRIPT_NAME="$(basename "$0")"
+TMP_PATH="$(mkdir -p "$TMP_BASEDIR" && mktemp -p "$TMP_BASEDIR" -d "$SCRIPT_NAME.XXXXXX")"
+RESULT_FILE="${SOURCE_FILE%.avi}.subtitled.avi"
+SUBTITLE_OPTS="-sub $SUBTITLE_FILE -subfont-text-scale 3"
+
+function quit ()
+{
+    # show error message if provided
+    if [ $# -gt 0 ]; then
+        echo "!!! $1"
+    fi
+
+    # remove temporary directory, if present
+    if stat "$TMP_BASEDIR/$SCRIPT_NAME"* > /dev/null 2>&1; then
+        echo ">>> Removing temporary files..."
+        rm -rf "$TMP_BASEDIR/$SCRIPT_NAME"* > "$OUTPUT_FILE" 2>&1 || \
+            echo "Error removing temporary files!"
+    fi
+    exit 1
+}
+
+
+# manage optional params
+while [ $# -gt 2 ]; do
+    if [ "$3" == "--1pass" ]; then
+        TWO_PASSES=false
+    elif [ "$3" == "--2passes" ]; then
+        TWO_PASSES=true
+    elif [ "$3" == "-v" ] || [ "$3" == "--verbose" ] ; then
+        OUTPUT_FILE="/dev/stdout"
+    else
+        echo; echo "Unknown parameter: " "$3"; echo
+        usage
+        quit 1
+    fi
+    shift 1
+done
+
+
+#------------------
+# SCRIPT MAIN BODY
+#------------------
+
+# Retrieving source files (video and subtitles)
+
+echo ">>> Copying remote file " "$SOURCE_PATH" " to local ""$TMP_PATH" " path..."
+scp -P "$SSH_PORT" "$USER@$IP:$SOURCE_PATH" "$TMP_PATH/$SOURCE_FILE" > "$OUTPUT_FILE" 2>&1 || \
+    quit "Error copying remote file to the local machine!"
+
+echo ">>> Copying local file " "$SUBTITLE_PATH" " to local ""$TMP_PATH" " path..."
+cp "$SUBTITLE_PATH" "$TMP_PATH" > "$OUTPUT_FILE" 2>&1 || \
+    quit "Error copying subtitles file to temporary location!"
+
+# Reencoding
+
+echo ">>> Reencoding video file with subtitles..."
+cd "$TMP_PATH"
+if $TWO_PASSES; then
+    echo ">>> Using 2 PASSES..."
+    mencoder "$SOURCE_FILE" -o "$RESULT_FILE" $AUDIO_OPTS $VIDEO_OPTS":vpass=1:turbo" $SUBTITLE_OPTS -idx > "$OUTPUT_FILE" 2>&1 \
+        && mencoder "$SOURCE_FILE" -o "$RESULT_FILE" $AUDIO_OPTS $VIDEO_OPTS":vpass=2" $SUBTITLE_OPTS -idx > "$OUTPUT_FILE" 2>&1 || \
+        quit "Error reencoding video file!"
+else
+    echo ">>> Using 1 PASS only..."
+    mencoder "$SOURCE_FILE" -o "$RESULT_FILE" $AUDIO_OPTS $VIDEO_OPTS $SUBTITLE_OPTS -idx > "$OUTPUT_FILE" 2>&1 || \
+        quit "Error reencoding video file!"
+fi
+
+# Copying the video file with subtitles back to the remote place
+
+echo ">>> Copying local " "$TMP_PATH/$RESULT_FILE" " file to remote " "$SOURCE_DIR" " path..."
+scp -P "$SSH_PORT" "$TMP_PATH/$RESULT_FILE" "$USER@$IP:$SOURCE_DIR" > "$OUTPUT_FILE" 2>&1 || \
+    quit "Error copying local file to the remote server!"
+
+# removing local files
+echo ">>> Removing temporary files..."
+rm -rf "$TMP_BASEDIR/$SCRIPT_NAME"* > "$OUTPUT_FILE" 2>&1 || \
+    quit "Error removing temporary path!"
+
+echo ">>> Process successfully completed!"
+exit 0
+

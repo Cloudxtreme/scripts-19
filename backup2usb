@@ -1,0 +1,287 @@
+#!/bin/bash
+#
+# Copyright (C) 2009 Mario Sanchez Prada.
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+
+MNTPOINT="/run/media/mario/55c5769d-3cfe-44ec-ac26-7f41ffa577c0"
+SYNC_CMD="rsync"
+DO_DD=false
+LVM_SS_SIZE=2G
+
+function quit ()
+{
+    local EXIT_CODE=0
+
+    # return exit code, if present
+    [ $# -gt 0 ] && EXIT_CODE=$1
+
+    # show descriptive message, if present
+    [ $# -gt 1 ] && echo "$2"
+
+    exit ${EXIT_CODE}
+}
+
+function shrink_swap_space ()
+{
+    echo "Shrinking swap partition down for snapshots..."; echo
+    sudo swapoff -a || return 1
+    sudo lvresize -f -L -${LVM_SS_SIZE} vg/swap || return 1
+    sudo mkswap /dev/vg/swap || return 1
+    sudo swapon -a || return 1
+
+    return 0
+}
+
+function restore_swap_space ()
+{
+    echo "Restoring swap partition back to its normal size..."; echo
+    sudo swapoff -a || return 1
+    sudo lvresize -f -L +${LVM_SS_SIZE} vg/swap || return 1
+    sudo mkswap /dev/vg/swap || return 1
+    sudo swapon -a || return 1
+
+    return 0
+}
+
+function backup_system_dd ()
+{
+    echo ; echo "### Backing up SYSTEM ###"; echo
+    # shrink_swap_space && sudo lvcreate -s -L${LVM_SS_SIZE} -nrootbackup /dev/vg/root &&
+    sudo lvcreate -s -L${LVM_SS_SIZE} -nrootbackup /dev/vg/root &&
+    {
+        mkdir -p "${MNTPOINT}/system"
+
+        echo "DDing vg-root partition..."
+        sudo dd if=/dev/mapper/vg-backup of="${MNTPOINT}/system/$(date +%Y%m%d)-vg-root.img"
+
+        echo "Removing LVM snapshot..."
+        sudo lvremove -f /dev/vg/rootbackup
+        # sudo lvremove -f /dev/vg/rootbackup && restore_swap_space
+
+        echo "DDing boot-sda1 partition..."
+        sudo dd if=/dev/sda1 of="${MNTPOINT}/system/$(date +%Y%m%d)-boot-sda1.img"
+
+        echo "DDing MBR..."
+        sudo dd if=/dev/sda bs=512 count=1 of="${MNTPOINT}/system/$(date +%Y%m%d)-mbr.img"
+
+        echo "Saving df output..."
+        echo "# df -h" > "${MNTPOINT}/system/$(date +%Y%m%d)-df-output"
+        df -h >> "${MNTPOINT}/system/$(date +%Y%m%d)-df-output"
+        echo >> "${MNTPOINT}/system/$(date +%Y%m%d)-df-output"
+        echo "# df" >> "${MNTPOINT}/system/$(date +%Y%m%d)-df-output"
+        df >> "${MNTPOINT}/system/$(date +%Y%m%d)-df-output"
+
+        echo "Saving /proc/mounts..."
+        cat "/proc/mounts" > "${MNTPOINT}/system/$(date +%Y%m%d)-proc-mounts"
+    }
+}
+
+function backup_system_rsync ()
+{
+    echo ; echo "### Backing up SYSTEM ###"; echo
+
+    # Uncoment next line if you need to temporarily downsize your
+    # swap partition to make room for the LVM snapshot
+    # shrink_swap_space
+
+    sudo lvcreate -s -L${LVM_SS_SIZE} -nrootbackup /dev/vg/root &&
+    {
+        echo; echo "Copying full filesystem..."
+        sudo mkdir -p /mnt/root-backup
+        mkdir -p "${MNTPOINT}/system/fs"
+        sudo mount /dev/mapper/vg-rootbackup /mnt/root-backup
+
+        ${SYNC_CMD} -av --delete \
+            --exclude "boot" \
+            --exclude "dev" \
+            --exclude "lost+found" \
+            --exclude "mnt" \
+            --exclude "tmp" \
+            --exclude "schroot" \
+            /mnt/root-backup/ \
+            ${MNTPOINT}/system/fs &&
+            {
+                echo; echo "Copying /boot..."
+                ${SYNC_CMD} -av --delete \
+                    --exclude "lost+found" \
+                    /boot/ \
+                    ${MNTPOINT}/system/fs/boot
+            }
+        sudo umount /mnt/root-backup
+        sudo rmdir /mnt/root-backup
+
+        echo "Removing LVM snapshot..."
+        sudo lvremove -f /dev/vg/rootbackup
+
+        # Uncoment next line if you need to restore your temporarily
+        # downsized swap partition to make room for the LVM snapshot
+        # restore_swap_space
+    }
+}
+
+function backup_schroot ()
+{
+    echo ; echo "### Backing up SCHROOT ###"; echo
+
+    # Uncoment next line if you need to temporarily downsize your
+    # swap partition to make room for the LVM snapshot
+    # shrink_swap_space
+
+    sudo lvcreate -s -L${LVM_SS_SIZE} -nschrootbackup /dev/vg/schroot &&
+    {
+        echo; echo "Copying full filesystem..."
+        sudo mkdir -p /mnt/schroot-backup
+        mkdir -p "${MNTPOINT}/schroot"
+        sudo mount /dev/mapper/vg-schrootbackup /mnt/schroot-backup
+
+        ${SYNC_CMD} -av --delete \
+            --exclude "lost+found" \
+            --exclude "*/dev" \
+            --exclude "*/lost+found" \
+            --exclude "*/mnt" \
+            --exclude "*/tmp" \
+            /mnt/schroot-backup/ \
+            ${MNTPOINT}/schroot
+
+        sudo umount /mnt/schroot-backup
+        sudo rmdir /mnt/schroot-backup
+
+        echo "Removing LVM snapshot..."
+        sudo lvremove -f /dev/vg/schrootbackup
+
+        # Uncoment next line if you need to restore your temporarily
+        # downsized swap partition to make room for the LVM snapshot
+        # restore_swap_space
+    }
+}
+
+function backup_home ()
+{
+    echo ; echo "### Backing up HOME ###"; echo
+    mkdir -p ${MNTPOINT}/Home
+    ${SYNC_CMD} -av --delete \
+        --exclude "misc" \
+        --exclude "Music" \
+        --exclude "Pictures" \
+        --exclude "work" \
+        --exclude ".adobe" \
+        --exclude ".cache" \
+        --exclude ".googleearth/Cache" \
+        --exclude ".gvfs" \
+        --exclude ".java" \
+        --exclude ".mozilla/firefox/isaro6og.default/Cache" \
+        --exclude ".thumbnails" \
+        /home/mario/ \
+        ${MNTPOINT}/Home
+}
+
+function backup_pictures ()
+{
+    echo ; echo "### Backing up PICTURES ###"; echo
+    mkdir -p ${MNTPOINT}/Pictures
+    ${SYNC_CMD} -av --delete \
+        /home/mario/Pictures/ \
+        ${MNTPOINT}/Pictures
+}
+
+function backup_work ()
+{
+    echo ; echo "### Backing up WORK ###"; echo
+    mkdir -p ${MNTPOINT}/work
+    ${SYNC_CMD} -av --delete \
+        /home/mario/work/ \
+        ${MNTPOINT}/work
+}
+
+function backup_misc ()
+{
+    echo ; echo "### Backing up MISC ###"; echo
+    mkdir -p ${MNTPOINT}/misc
+    ${SYNC_CMD} -av --delete \
+        /home/mario/misc/ \
+        ${MNTPOINT}/misc
+}
+
+function backup_music ()
+{
+    echo ; echo "### Backing up MUSIC ###"; echo
+    mkdir -p ${MNTPOINT}/Music
+    ${SYNC_CMD} -av --delete \
+        /home/mario/Music/ \
+        ${MNTPOINT}/Music
+}
+
+function backup_all ()
+{
+    echo ; echo "### Backing up *ALL* ###"; echo
+    backup_home
+    backup_dropbox
+
+#   DO NOT BACKUP PICTURES AS THEY'RE NOT IN THIS LAPTOP
+#   backup_pictures
+
+    backup_work
+    backup_misc
+    backup_music
+    backup_schroot
+    backup_system_dd
+    backup_system_rsync
+}
+
+# MAIN BODY
+
+if [ "$(whoami)" != "root" ]; then
+    quit 1 "You must be root to run this script"
+fi
+
+if [ "${1}" == "all" ]; then
+    # backup everything
+    backup_all
+elif [ $# -eq 0 ] || [ "${1}" == "help" ] || [ "${1}" == "usage" ]; then
+    # show usage
+    echo "Usage: backup2usb (all | system-rsync | system-dd | schroot | home | pictures | work | misc | music)+"
+    exit 0
+else
+    # check for optional parameters
+    while [ $# -ge 1 ]; do
+        if [ "${1}" == "system-rsync" ]; then
+            backup_system_rsync
+        elif [ "${1}" == "system-dd" ]; then
+            backup_system_dd
+        elif [ "${1}" == "schroot" ]; then
+            backup_schroot
+        elif [ "${1}" == "home" ]; then
+            backup_home;
+        elif [ "${1}" == "pictures" ]; then
+            backup_pictures;
+        elif [ "${1}" == "work" ]; then
+            backup_work;
+        elif [ "${1}" == "misc" ]; then
+            backup_misc;
+        elif [ "${1}" == "music" ]; then
+            backup_music;
+        else
+            # WTF???
+            echo; echo "### Unknown backup specified ###"; echo
+        fi
+        shift 1
+    done
+fi
+
+echo "Done!"

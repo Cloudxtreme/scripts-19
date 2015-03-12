@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+#
+# A python script for updating WebKit local repositories faster.
+#
+# Copyright (C) 2011-2013 Mario Sanchez Prada
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+#
+# Assumptions for this script to work:
+#
+#  * You need to have setup your local git repo to track the git
+#    mirror through a remote repository, and the name of that remote
+#    repo must be 'upstream' (set by default when cloning).
+#
+#    You should have something like this in your .git/config file:
+#
+#    [remote "upstream"]
+#            url = git://git.webkit.org/WebKit.git
+#            fetch = +refs/heads/*:refs/remotes/upstream/*
+#
+#    [branch "master"]
+#            remote = upstream
+#            merge = refs/heads/master
+#
+#  * You need to be tracking the SVN repository with git-svn and have
+#    a local branch asociated to it (and define the SVN_BRANCH variable)
+#
+#    You should have something like this in your .git/config file:
+#
+#    [svn-remote "svn"]
+#            url = http://svn.webkit.org/repository/webkit
+#            fetch = trunk:refs/remotes/trunk
+#
+#    [branch "svn-trunk"]
+#            remote = .
+#            merge = refs/remotes/trunk
+#
+#  * You have defined the WEBKIT_PATH variable to point your local repo
+#
+import subprocess
+import sys
+
+SVN_BRANCH='svn-trunk'                       # EDIT
+WEBKIT_PATH='/home/mario/work/WebKit' # EDIT
+
+def run_cmd(cmdline, dryrun=False):
+    retcode = subprocess.call(cmdline, shell=True, cwd=WEBKIT_PATH)
+    if (retcode != 0) and (dryrun != True):
+        quit('[ERROR] :: ' + cmdline + ' failed!')
+
+    return retcode
+
+def main():
+    print '>>> Changing to the SVN branch...\n'
+    run_cmd('git checkout ' + SVN_BRANCH)
+
+    stashed_changes = False
+    retcode = run_cmd('git commit --dry-run -a -m ""', True)
+    if retcode == 0:
+        print '>>> Stashing changes...\n'
+        run_cmd('git commit -a -m "webkit-fast-update: stashing changes"')
+        stashed_changes = True
+
+    print '>>> Changing to temporary branch...\n'
+    run_cmd('git checkout -b wfu-land')
+
+    print '>>> Fetching changes from git mirror...\n'
+    run_cmd('git fetch upstream')
+
+    print '\n>>> Updating refs in git svn remote...\n'
+    run_cmd('git update-ref refs/remotes/trunk upstream/master')
+
+    print '>>> Changing back to SVN branch...\n'
+    run_cmd('git checkout ' + SVN_BRANCH)
+
+    print '>>> Removing temporary branch...\n'
+    run_cmd('git branch -D wfu-land')
+
+    print '>>> Updating last bits through git-svn...\n'
+    run_cmd('git svn rebase')
+
+    if stashed_changes:
+        print '>>> Unstashing changes...\n'
+        run_cmd('git reset HEAD^')
+
+    print '>>> Fast update completed!'
+
+if __name__ == "__main__":
+    main()

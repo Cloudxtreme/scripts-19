@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+# Copyright (C) 2010 Mario Sanchez Prada.
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+
+function quit ()
+{
+    local EXIT_CODE=0
+
+    # return exit code, if present
+    [ $# -gt 0 ] && EXIT_CODE=$1
+
+    # show descriptive message, if present
+    [ $# -gt 1 ] && echo "" && echo "!!! ${2} !!!"
+
+    exit ${EXIT_CODE}
+}
+
+function usage ()
+{
+    echo "Usage: raw2jpg [ -f | --force ] [--conf <ID-file>] <rawfile(s)>"
+    echo "  [ -f | --force ]    : Overwrite output files if already present"
+    echo "  [ --conf <ID-file ] : Use manipulation parameters from <ID-file>"
+    echo ""
+}
+
+# MAIN BODY
+
+echo "*** Processing RAW files in batch mode ***"
+echo ""
+
+if [ $# -eq 0 ] || [ "${1}" == "help" ] || [ "${1}" == "usage" ]; then
+    # show usage
+    usage
+    exit 0
+else
+    # image manipulation parameters
+    IMG_MOD_PARAMS=""
+
+    # output parameters
+    OUTPUT_PARAMS=( \
+        "--shrink=1" \
+        "--rotate=camera" \
+        "--out-type=jpg" \
+        "--compression=95" \
+        "--exif" \
+        "--create-id=no" \
+        )
+
+    # check for optional parameters
+    while [ $# -ge 1 ];do
+        if [ "${1}" == "--conf" ]; then
+            if [ $# -gt 1 ]; then
+                IMG_MOD_PARAMS="--conf=${2}"
+                shift 1
+            else
+                usage
+                quit 1 "Missing conf file"
+            fi
+        elif [ "${1}" == "-f" ] || [ "${1}" == "--force" ]; then
+            OUTPUT_PARAMS=( ${OUTPUT_PARAMS[@]} "--overwrite" )
+        else
+            # no more optional params
+            break
+        fi
+        shift 1
+    done
+
+    # use uFraw default parameters if ID file not already set
+    if [ "${IMG_MOD_PARAMS}" == "" ]; then
+        IMG_MOD_PARAMS=( \
+            "--wb=camera" \
+            "--gamma=0.45" \
+            "--linearity=0.10" \
+            "--exposure=0" \
+            "--restore=lch" \
+            "--clip=digital" \
+            "--saturation=1.0" \
+            "--wavelet-denoising-threshold=0.0" \
+            "--curve=linear" \
+            "--black-point=0.0" \
+            "--interpolation=ahd" \
+            "--grayscale=none" \
+            "--base-curve=fotogenetic_point_and_shoot_v41" \
+            )
+#            "--base-curve=fotogenetic_ev3_v42" \
+    fi
+fi
+
+# Do the conversion
+ufraw-batch ${IMG_MOD_PARAMS[@]} ${OUTPUT_PARAMS[@]} ${@} \
+    ||  quit 1 "An error has happened"
+
+echo ""
+echo "*** Done! ***"

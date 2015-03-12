@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# Bash script to easily update CScope's database.
+#
+# Copyright (C) 2012-2014 Mario Sanchez Prada.
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+#
+# How to use it:
+# --------------
+# Silly bash script to easily regenerate the CScope's database
+# by speficying a list of rules to selectively ignore/include
+# different directories and/or files inside a given BASE_PATH.
+#
+# Remember to configure two basic paths:
+#
+#    BASE_PATH: root path you want to index C/C++ files from
+#  CSCOPE_PATH: path to store CScope's database
+#
+# Some (configurable) rules to be taken into account:
+#  - Ignore flicksoup (already bundled in frogr)
+#  - Ignore duplicate stuff in WK's Debug build (I'll use Release instead)
+#  - Ignore WK's internal jhbuild
+#  - Ignore Qt-related crap
+#  + Include .c, .cpp and .h files only
+#
+# Last, remember to update your .emacs so it will find the
+# metainformation included in the generated database.
+
+# Sanity check
+which cscope > /dev/null 2>&1 || \
+{
+    echo "Command cscope not found. Please install it first!"
+    exit 1
+}
+
+# Basic configuration
+BASE_PATH="/home/mario/work"
+CSCOPE_PATH="${BASE_PATH}/cscope"
+
+# Print some handy information to the user
+echo "Rebuilding cscope database in ${CSCOPE_PATH}..."
+
+# Update the list of files to be indexed.]
+find ${BASE_PATH}                                                      \
+  -path "${BASE_PATH}/flicksoup*" -prune -o                               \
+  -path "${BASE_PATH}/linux*" -prune -o                                   \
+  -path "${BASE_PATH}/WebKit/WebKitBuild/Debug*" -prune -o         \
+  -path "${BASE_PATH}/WebKit/WebKitBuild/Dependencies*" -prune -o  \
+  -path "/usr/include/Qt*" -prune -o                                      \
+  -type f -name "*.[ch]" -print -o -name "*.cpp" -print                           \
+  > "${CSCOPE_PATH}/cscope.files"
+
+# Update the list of system files to be indexed.]
+find /usr/include -type f -name "*.[ch]" -print -o -name "*.cpp" -print >> "${CSCOPE_PATH}/cscope.files"
+
+# Finally, regenerate the database from the database directory
+cd ${CSCOPE_PATH}
+nice -n 20 cscope -b # -b: just build the database. Do not launch the Cscope GUI
+
+# Print some additional handy information for Emacs users
+#
+# Remember to add the following lines to your ~/.emacs file
+# in case you want to use it inside your beloved editor:
+#
+#  ;; CScope
+# (require 'xcscope)
+# (cscope-set-initial-directory "${CSCOPE_PATH}")
+
+echo "Finished rebuilding cscope database"
+
+exit 0

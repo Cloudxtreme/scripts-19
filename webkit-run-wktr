@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# Copyright (C) 2012 Mario Sanchez Prada.
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+
+# Default values
+WK_PATH="/home/mario/work/WebKit"
+WK_BUILD_PATH="${WK_PATH}/WebKitBuild/Release"
+WKTR_CMD="${WK_BUILD_PATH}/Programs/WebKitTestRunner"
+
+# Handle options
+if [ $# -gt 0 ]; then
+    if [ $1 == "--debug" ]; then
+        WK_BUILD_PATH="${WK_PATH}/WebKitBuild/Debug"
+        WKTR_CMD="${WK_BUILD_PATH}/Programs/WebKitTestRunner"
+        shift 1
+    elif [ $1 == "--gdb" ]; then
+        WK_BUILD_PATH="${WK_PATH}/WebKitBuild/Debug"
+        WKTR_CMD="${WK_BUILD_PATH}/Programs/WebKitTestRunner --timeout -1"
+        export WEBKIT2_PAUSE_WEB_PROCESS_ON_LAUNCH="1"
+        shift 1
+    fi
+fi
+
+export GTK_MODULES='gail'
+export GSETTINGS_BACKEND='memory'
+export LIBOVERLAY_SCROLLBAR='0'
+export TEST_RUNNER_INJECTED_BUNDLE_FILENAME="${WK_BUILD_PATH}/Libraries/libTestRunnerInjectedBundle.la"
+export TEST_RUNNER_TEST_PLUGIN_PATH="${WK_BUILD_PATH}/TestNetscapePlugin/.libs"
+export WEBKIT_INSPECTOR_PATH="${WK_BUILD_PATH}/Programs/resources/inspector"
+export AUDIO_RESOURCES_PATH="${WK_PATH}/Source/WebCore/platform/audio/resources"
+
+${WKTR_CMD} $@

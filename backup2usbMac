@@ -1,0 +1,209 @@
+#!/bin/bash
+#
+# Copyright (C) 2011 Mario Sanchez Prada.
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+
+MNTPOINT="/Volumes/BackupsMac"
+RSYNC_CMD="sudo rsync"
+
+function quit ()
+{
+    local EXIT_CODE=0
+
+    # return exit code, if present
+    [ $# -gt 0 ] && EXIT_CODE=$1
+
+    # show descriptive message, if present
+    [ $# -gt 1 ] && echo "$2"
+
+    exit ${EXIT_CODE}
+}
+
+function backup_desktop ()
+{
+    echo ; echo "### Backing up DESKTOP ###"; echo
+    mkdir -p ${MNTPOINT}/Desktop
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/Desktop/ \
+        ${MNTPOINT}/Desktop
+}
+
+function backup_documents ()
+{
+    echo ; echo "### Backing up DOCUMENTS ###"; echo
+    mkdir -p ${MNTPOINT}/Documents
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/Documents/ \
+        ${MNTPOINT}/Documents
+}
+
+function backup_downloads ()
+{
+    echo ; echo "### Backing up DOWNLOADS ###"; echo
+    mkdir -p ${MNTPOINT}/Downloads
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/Downloads/ \
+        ${MNTPOINT}/Downloads
+}
+
+function backup_movies ()
+{
+    echo ; echo "### Backing up MOVIES ###"; echo
+    mkdir -p ${MNTPOINT}/Movies
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/Movies/ \
+        ${MNTPOINT}/Movies
+}
+
+function backup_music ()
+{
+    echo ; echo "### Backing up MUSIC ###"; echo
+    mkdir -p ${MNTPOINT}/Music
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/Music/ \
+        ${MNTPOINT}/Music
+}
+
+function backup_pictures ()
+{
+    echo ; echo "### Backing up PICTURES ###"; echo
+    mkdir -p ${MNTPOINT}/Pictures
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/Pictures/ \
+        ${MNTPOINT}/Pictures
+}
+
+function backup_devel ()
+{
+    echo ; echo "### Backing up DEVELOPMENT FILES ###"; echo
+    mkdir -p ${MNTPOINT}/devel
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/Source \
+        ${MNTPOINT}/devel
+
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/gtk \
+        ${MNTPOINT}/devel
+
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/.local \
+        ${MNTPOINT}/devel
+
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/.jhbuild* \
+        ${MNTPOINT}/devel
+
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/.bashrc \
+        ${MNTPOINT}/devel
+
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/.gtkrc \
+        ${MNTPOINT}/devel
+
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/tmp-jhbuild-revision \
+        ${MNTPOINT}/devel
+
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/.emacs* \
+        ${MNTPOINT}/devel
+
+    ${RSYNC_CMD} -av --delete \
+	--exclude ".localized" \
+	--exclude ".DS_Store" \
+        /Users/mario/.gitconfig \
+        ${MNTPOINT}/devel
+}
+
+function backup_all ()
+{
+    echo ; echo "### Backing up *ALL* ###"; echo
+    backup_desktop
+    backup_documents
+    backup_downloads
+    backup_movies
+    backup_music
+    backup_pictures
+    backup_devel
+}
+
+# MAIN BODY
+
+if [ "${1}" == "all" ]; then
+    # backup everything
+    backup_all
+elif [ $# -eq 0 ] || [ "${1}" == "help" ] || [ "${1}" == "usage" ]; then
+    # show usage
+    echo "Usage: backup2usb (all | desktop | documents | downloads | movies | music | pictures | devel)+"
+    exit 0
+else
+    # check for optional parameters
+    while [ $# -ge 1 ]; do
+        if [ "${1}" == "desktop" ]; then
+            backup_desktop
+        elif [ "${1}" == "documents" ]; then
+            backup_documents;
+        elif [ "${1}" == "downloads" ]; then
+            backup_downloads;
+        elif [ "${1}" == "movies" ]; then
+            backup_movies;
+        elif [ "${1}" == "music" ]; then
+            backup_music;
+        elif [ "${1}" == "pictures" ]; then
+            backup_pictures;
+        elif [ "${1}" == "devel" ]; then
+            backup_devel;
+        else
+            # WTF???
+            echo; echo "### Unknown backup specified ###"; echo
+        fi
+        shift 1
+    done
+fi
+
+echo "Done!"

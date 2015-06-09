@@ -62,6 +62,7 @@ find ${BASE_PATH}                                                      \
   -path "${BASE_PATH}/linux*" -prune -o                                   \
   -path "${BASE_PATH}/WebKit/WebKitBuild/Debug*" -prune -o         \
   -path "${BASE_PATH}/WebKit/WebKitBuild/Dependencies*" -prune -o  \
+  -path "${BASE_PATH}/endless/obs*" -prune -o  \
   -path "/usr/include/Qt*" -prune -o                                      \
   -type f -name "*.[ch]" -print -o -name "*.cpp" -print                           \
   > "${CSCOPE_PATH}/cscope.files"

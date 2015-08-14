@@ -205,6 +205,7 @@ function backup_work ()
     echo ; echo "### Backing up WORK ###"; echo
     mkdir -p ${MNTPOINT}/work
     ${SYNC_CMD} -av --delete \
+        --exclude "endless/images" \
         /home/mario/work/ \
         ${MNTPOINT}/work
 }

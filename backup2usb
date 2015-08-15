@@ -182,6 +182,7 @@ function backup_home ()
         --exclude "work" \
         --exclude ".adobe" \
         --exclude ".cache" \
+        --exclude ".ccache" \
         --exclude ".googleearth/Cache" \
         --exclude ".gvfs" \
         --exclude ".java" \
@@ -206,6 +207,7 @@ function backup_work ()
     mkdir -p ${MNTPOINT}/work
     ${SYNC_CMD} -av --delete \
         --exclude "endless/images" \
+        --exclude "endless/ccache-chroot" \
         /home/mario/work/ \
         ${MNTPOINT}/work
 }

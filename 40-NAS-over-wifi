@@ -1,0 +1,19 @@
+#!/bin/bash
+# NetworkManager script that ensure a route to connect to my NAS
+# over Wi-Fi is created when connecting to my home Network.
+
+PATH=/bin:/usr/bin:/sbin
+
+interface=$1
+action=$2
+
+ESSID=Recuncho
+IFACE=wlp3s0
+TARGET=192.168.0.75
+
+if [ $action = "up" ]; then
+    if iwconfig wlp3s0 2> /dev/null | grep -i ESSID | grep $ESSID; then
+        route add -host $TARGET metric 50 dev $IFACE
+    fi
+fi
+

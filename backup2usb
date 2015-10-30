@@ -241,8 +241,12 @@ function backup_all ()
 
     backup_work
     backup_misc
-    backup_music
+
+#   MUSIC IS IN ANOTHER HARD DRIVES now
+#   backup_music
+
     backup_schroot
+
     backup_system_dd
     backup_system_rsync
 }

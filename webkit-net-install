@@ -1,0 +1,22 @@
+#!/bin/bash -e
+#
+# Very silly script that allows me to easily build webkit in a powerful
+# machine and then "install" the relevant files over the network INTO A
+# DEBIAN-based MACHINE, overriding whatever files were there before by
+# means of a package installation
+#
+# Note: Paths in target machine should be adapted for RH-like distros.
+
+if [ $# -lt 1 ]; then
+	echo "Destination missing"
+	exit 1
+fi
+
+TARGET=root@${1}
+BASEDIR=$(pwd)
+
+scp -r ${BASEDIR}/lib/libjavascriptcoregtk-4.0.so* ${TARGET}:/usr/lib/i386-linux-gnu/
+scp -r ${BASEDIR}/lib/libwebkit2gtk-4.0.so* ${TARGET}:/usr/lib/i386-linux-gnu/
+scp -r ${BASEDIR}/lib/libwebkit2gtkinjectedbundle.so* ${TARGET}:/usr/lib/i386-linux-gnu/webkit2gtk-4.0/injected-bundle
+scp -r ${BASEDIR}/bin/* ${TARGET}:/usr/lib/i386-linux-gnu/webkit2gtk-4.0
+scp -r ${BASEDIR}/bin/jsc ${TARGET}:/usr/bin

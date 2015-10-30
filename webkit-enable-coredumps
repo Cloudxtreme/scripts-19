@@ -1,0 +1,9 @@
+#!/bin/bash
+# Enable coredumps and instruct to put them in /tmp/coredumps
+
+COREDUMPS_DIR=/tmp/coredumps
+
+ulimit -c unlimited
+mkdir -p ${COREDUMPS_DIR}
+
+export WEBKIT_CORE_DUMPS_DIRECTORY=${COREDUMPS_DIR}

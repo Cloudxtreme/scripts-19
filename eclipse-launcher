@@ -1,0 +1,5 @@
+#!/bin/bash
+# Simple launcher to use GTK2 with eclipse, which works
+# around visual issues when using the global Dark Theme.
+
+SWT_GTK3=0 /opt/eclipse/eclipse $@

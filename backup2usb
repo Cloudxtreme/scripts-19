@@ -68,7 +68,7 @@ function backup_system_dd ()
         mkdir -p "${MNTPOINT}/system"
 
         echo "DDing vg-root partition..."
-        sudo dd if=/dev/mapper/vg-backup of="${MNTPOINT}/system/$(date +%Y%m%d)-vg-root.img"
+        sudo dd if=/dev/mapper/vg-rootbackup of="${MNTPOINT}/system/$(date +%Y%m%d)-vg-root.img"
 
         echo "Removing LVM snapshot..."
         sudo lvremove -f /dev/vg/rootbackup

@@ -57,18 +57,26 @@ CSCOPE_PATH="${BASE_PATH}/cscope"
 echo "Rebuilding cscope database in ${CSCOPE_PATH}..."
 
 # Update the list of files to be indexed.]
-find ${BASE_PATH}                                                      \
-  -path "${BASE_PATH}/flicksoup*" -prune -o                               \
-  -path "${BASE_PATH}/linux*" -prune -o                                   \
-  -path "${BASE_PATH}/WebKit/WebKitBuild/Debug*" -prune -o         \
-  -path "${BASE_PATH}/WebKit/WebKitBuild/Dependencies*" -prune -o  \
-  -path "${BASE_PATH}/endless/obs*" -prune -o  \
-  -path "/usr/include/Qt*" -prune -o                                      \
-  -type f -name "*.[ch]" -print -o -name "*.cpp" -print                           \
-  > "${CSCOPE_PATH}/cscope.files"
+find ${BASE_PATH} \
+     -path "${BASE_PATH}/flicksoup*" -prune -o                        \
+     -path "${BASE_PATH}/linux*" -prune -o                            \
+     -path "${BASE_PATH}/WebKit/WebKitBuild/Debug*" -prune -o         \
+     -path "${BASE_PATH}/WebKit/WebKitBuild/Dependencies*" -prune -o  \
+     -path "${BASE_PATH}/endless/obs*" -prune -o                      \
+     -path "${BASE_PATH}/endless/other*" -prune -o                    \
+     -path "${BASE_PATH}/endless/packages*" -prune -o                 \
+     -path "/usr/include/Qt*" -prune -o                               \
+     -type f -name "*.[ch]" -print -o                                 \
+     -type f -name "*.cc" -print -o                                   \
+     -type f -name "*.cpp" -print                                     \
+     > "${CSCOPE_PATH}/cscope.files"
 
 # Update the list of system files to be indexed.]
-find /usr/include -type f -name "*.[ch]" -print -o -name "*.cpp" -print >> "${CSCOPE_PATH}/cscope.files"
+find /usr/include \
+     -type f -name "*.[ch]" -print -o \
+     -type f -name "*.cpp" -print -o \
+     -type f -name "*.cc" -print \
+     >> "${CSCOPE_PATH}/cscope.files"
 
 # Finally, regenerate the database from the database directory
 cd ${CSCOPE_PATH}

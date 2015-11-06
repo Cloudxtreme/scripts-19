@@ -29,7 +29,6 @@
 # generates a valid XML output that can be redirected to a file, for further
 # importation from project settings with Eclipse CDT.
 
-import getopt
 import subprocess
 import sys
 

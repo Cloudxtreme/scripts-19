@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+#
+# A python script to generate a valid XML file that can be used to import a
+# list of include paths in Eclipse CDT's "C/C++ General > Paths and Symbols".
+#
+# Copyright (C) 2015 Mario Sanchez Prada
+# Authors: Mario Sanchez Prada <mario@mariospr.org>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# This script updates your WebKit local respository in a faster way
+# than just using git-svn rebase by fetching changes from the git
+# mirror to the associated remote repository first, then updating the
+# references in your local branch tracking the SVN repository.
+#
+# Usage:
+#
+# The script accepts a list of valid package names, as if it was the input
+# for pkg-config (e.g. "pkg-config-to-eclipse gtk+-3.0 libsoup-2.4") and then
+# generates a valid XML output that can be redirected to a file, for further
+# importation from project settings with Eclipse CDT.
+
+import getopt
+import subprocess
+import sys
+
+
+class EclipseXMLConfiguration:
+    # Blurbs to begind and finish the XML content
+    HEADER_STR = '<?xml version="1.0" encoding="UTF-8"?>\n<cdtprojectproperties>\n<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.IncludePaths">\n'
+    FOOTER_STR = '</section>\n</cdtprojectproperties>'
+
+    def __init__(self, paths=None):
+        """
+        Constructor, accepting a list of valid paths to
+        generate the configuration from.
+        """
+        self._paths = [] if paths is None else paths
+
+    def _get_language_XML(self, language):
+        result = '<language name="{} Source File">\n'.format(language)
+        for path in self._paths:
+            result += '  <includepath>{}</includepath>\n'.format(path)
+        result += '</language>'
+        return result
+
+    def export_to_XML(self):
+        """
+        Returns a string with the contents of the
+        XML configuration file
+        """
+        result = EclipseXMLConfiguration.HEADER_STR
+        result += '{}\n'.format(self._get_language_XML('C'))
+        result += '{}\n'.format(self._get_language_XML('C++'))
+        result += EclipseXMLConfiguration.FOOTER_STR
+        return result
+
+
+class PkgConfigHelper:
+    def __init__(self, pkgs):
+        """
+        Constructor, accepting a list of package names to generate
+        the configuration from. Expects same syntax than pkg-config.
+        """
+        self._pkgs = pkgs
+        self._paths = None
+
+    def get_include_paths(self):
+        """
+        Returns a list of valid paths after parsing the output of
+        'pkg-config --cflags' for the given list of package names.
+        """
+        if self._paths is None:
+            cflags = self._find_cflags()
+            self._paths = self._parse_cflags(cflags)
+            self._paths.sort()
+
+        return self._paths
+
+    def _find_cflags(self):
+        try:
+            output = subprocess.check_output(['pkg-config', '--cflags'] + self._pkgs)
+        except subprocess.CalledProcessError:
+            sys.exit(1)
+
+        # check_output returns a byte string
+        return str(output)
+
+    def _parse_cflags(self, cflags):
+        flags_list = cflags.split("-I")
+        return [flag.strip() for flag in flags_list if flag.startswith('/')]
+
+
+if __name__ == '__main__':
+    # Create the helper class that parses the output of pkg-config
+    helper = PkgConfigHelper(sys.argv[1:])
+    paths = helper.get_include_paths()
+
+    # Generate the XML content and print it to output
+    config = EclipseXMLConfiguration(paths)
+    print(config.export_to_XML())

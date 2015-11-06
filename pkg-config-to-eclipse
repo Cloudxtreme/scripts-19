@@ -80,7 +80,7 @@ class PkgConfigHelper:
         """
         if self._paths is None:
             cflags = self._find_cflags()
-            self._paths = self._parse_cflags(cflags)
+            self._paths = list(set(self._parse_cflags(cflags)))
             self._paths.sort()
 
         return self._paths

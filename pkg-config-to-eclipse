@@ -92,7 +92,7 @@ class PkgConfigHelper:
             sys.exit(1)
 
         # check_output returns a byte string
-        return str(output)
+        return output.decode()
 
     def _parse_cflags(self, cflags):
         flags_list = cflags.split("-I")

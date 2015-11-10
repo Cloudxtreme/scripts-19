@@ -57,6 +57,11 @@ export EDITOR=/bin/nano
 export PATH=${PATH}:$HOME/work/WebKit/Tools/Scripts
 export EMAIL_ADDRESS=mario@endlessm.com
 
+COREDUMPS_DIR=/tmp/coredumps
+mkdir -p ${COREDUMPS_DIR}
+export WEBKIT_CORE_DUMPS_DIRECTORY=${COREDUMPS_DIR}
+ulimit -c unlimited
+
 # ANDROID
 export PATH=${PATH}:/opt/android-sdk-linux_x86/tools:/opt/android-sdk-linux_x86/platform-tools
 export JAVA_HOME="/usr/java/latest"

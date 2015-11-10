@@ -80,4 +80,25 @@ alias ls='ls --color'
 alias enox='emacs-nox'
 
 
+# ENDLESS
 
+if [ -d /var/endless ]; then
+    # Add ccache inside Endless's chroot
+    export PATH=/usr/lib/ccache:$PATH
+    export CCACHE_DIR=$HOME/work/endless/ccache-chroot/$(arch)
+    mkdir -p $CCACHE_DIR
+
+    # Chromium sandbox
+    export CHROME_DEVEL_SANDBOX=/usr/local/bin/chrome-devel-sandbox
+else
+    # CHROMIUM
+    export PATH=$HOME/work/chromium/depot_tools:$PATH
+    export GYP_DEFINES="$GYP_DEFINES component=shared_library"
+    export CHROME_DEVEL_SANDBOX=$HOME/work/chromium/chrome_sandbox
+
+    # http://mkollaro.github.io/2015/05/08/compiling-chromium-with-clang-and-icecc/
+    export PATH=$HOME/work/chromium/src/third_party/llvm-build/Release+Asserts/bin:$PATH
+    export GYP_DEFINES="$GYP_DEFINES clang=1 make_clang_dir=/usr/libexec/icecc clang_use_chrome_plugins=0 linux_use_debug_fission=0 linux_use_bundled_binutils=0"
+    export ICECC_VERSION=$HOME/work/chromium/clang.tar.gz
+    export ICECC_CLANG_REMOTE_CPP=1
+fi

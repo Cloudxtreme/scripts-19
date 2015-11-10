@@ -40,6 +40,9 @@ export PS1="\[\033[01;34m\]${debian_chroot:+($debian_chroot)}$(parse_jhbuild):\w
 export EMAIL=mario@mariospr.org
 export LANG=en_US.UTF-8
 
+# ECLIPSE
+export PATH=$PATH:/opt/eclipse
+
 # DEBIAN
 export DEBEMAIL="mario@endlessm.com"
 export DEBFULLNAME="Mario Sanchez Prada"
@@ -51,7 +54,7 @@ complete -F _quilt_completion $_quilt_complete_opt dquilt
 # WEBKIT
 export SVN_LOG_EDITOR=/bin/nano
 export EDITOR=/bin/nano
-export PATH=${PATH}:/home/mario/work/WebKit/Tools/Scripts
+export PATH=${PATH}:$HOME/work/WebKit/Tools/Scripts
 export EMAIL_ADDRESS=mario@endlessm.com
 
 # ANDROID
@@ -64,7 +67,7 @@ export BOARD=uno
 export SERIALDEV=/dev/ttyACM0
 
 # GSTREAMER
-export GST_UNINSTALLED_ROOT=/home/mario/work/gstreamer/head
+export GST_UNINSTALLED_ROOT=$HOME/work/gstreamer/head
 
 # ALIASES
 alias psc='ps xawf -eo pid,user,cgroup,args'

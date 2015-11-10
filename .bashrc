@@ -76,6 +76,8 @@ export GST_UNINSTALLED_ROOT=$HOME/work/gstreamer/head
 
 # ALIASES
 alias psc='ps xawf -eo pid,user,cgroup,args'
+alias ls='ls --color'
+alias enox='emacs-nox'
 
 
 

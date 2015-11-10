@@ -96,9 +96,17 @@ else
     export GYP_DEFINES="$GYP_DEFINES component=shared_library"
     export CHROME_DEVEL_SANDBOX=$HOME/work/chromium/chrome_sandbox
 
+    # ccache defines needed for chromium
+    export CCACHE_CPP2=yes
+    export CCACHE_SLOPPINESS=time_macros
+
+    # Icecc Integration (not using clang)
+    export GYP_DEFINES="$GYP_DEFINES clang=0 linux_use_debug_fission=0 linux_use_bundled_binutils=0"
+
+    # Icecc + clang (does not work, but it should)
     # http://mkollaro.github.io/2015/05/08/compiling-chromium-with-clang-and-icecc/
-    export PATH=$HOME/work/chromium/src/third_party/llvm-build/Release+Asserts/bin:$PATH
-    export GYP_DEFINES="$GYP_DEFINES clang=1 make_clang_dir=/usr/libexec/icecc clang_use_chrome_plugins=0 linux_use_debug_fission=0 linux_use_bundled_binutils=0"
-    export ICECC_VERSION=$HOME/work/chromium/clang.tar.gz
-    export ICECC_CLANG_REMOTE_CPP=1
+    #export PATH=$PATH:$HOME/work/chromium/src/third_party/llvm-build/Release+Asserts/bin
+    #export GYP_DEFINES="$GYP_DEFINES clang=1 make_clang_dir=/usr/lib64/ccache/clang clang_use_chrome_plugins=0 linux_use_debug_fission=0 linux_use_bundled_binutils=0"
+    #export ICECC_VERSION=$HOME/work/chromium/clang.tar.gz
+    #export ICECC_CLANG_REMOTE_CPP=1
 fi

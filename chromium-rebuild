@@ -1,0 +1,24 @@
+#!/bin/bash -e
+# Script to quickly rebuild chromium after having build a debian
+# package with dpkg-buildpackage in place.
+#
+# Usage: chrome-rebuild <targets> (e.g. chrome-rebuild chrome)
+
+BASE_DIR=$(pwd)
+if [ ! -d "${BASE_DIR}/out" ]; then
+    echo "Wrong base directory: out/ not found"
+    exit 1;
+fi
+
+if [ $# -lt 1 ]; then
+    echo "Missing target"
+    exit 1;
+fi
+
+# How to build chromium in place (after building the package)
+rm build-stamp || true
+mv "${BASE_DIR}/out/Release" "${BASE_DIR}/out/Release-chromium" > /dev/null || true
+mv "${BASE_DIR}/out/Release-chromium" "${BASE_DIR}/out/Release" > /dev/null
+ninja -j4 -C ./out/Release $@
+mv "${BASE_DIR}/out/Release" "${BASE_DIR}/out/Release-chromium"
+touch build-stamp

@@ -14,10 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-# This script updates your WebKit local respository in a faster way
-# than just using git-svn rebase by fetching changes from the git
-# mirror to the associated remote repository first, then updating the
-# references in your local branch tracking the SVN repository.
 
 HOSTS_FILE="/etc/hosts"
 BACKUP_HOSTS_FILE="${HOSTS_FILE}-$(date +%Y%m%d-%H:%M:%S).bckp"

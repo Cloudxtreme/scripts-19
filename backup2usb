@@ -179,11 +179,13 @@ function backup_home ()
         --exclude ".adobe" \
         --exclude ".cache" \
         --exclude ".ccache" \
+        --exclude ".chdist" \
         --exclude ".googleearth/Cache" \
         --exclude ".gvfs" \
         --exclude ".java" \
         --exclude ".mozilla/firefox/isaro6og.default/Cache" \
         --exclude ".thumbnails" \
+        --exclude ".thunderbird/retjvbnr.default/ImapMail" \
         /home/mario/ \
         ${MNTPOINT}/Home
 }
@@ -202,8 +204,16 @@ function backup_work ()
     echo ; echo "### Backing up WORK ###"; echo
     mkdir -p ${MNTPOINT}/work
     ${SYNC_CMD} -av --delete \
+        --exclude "cscope" \
+        --exclude "chromium/src/out" \
         --exclude "endless/images" \
         --exclude "endless/ccache-chroot" \
+        --exclude "endless/github/chromium-browser/out" \
+        --exclude "endless/github/*deb" \
+        --exclude "endless/gnome/inst" \
+        --exclude "endless/gnome/webkitgtk*" \
+        --exclude "endless/obs/home_msanchez_branches_eos_master_extra/webkit2gtk" \
+        --exclude "WebKit/WebKitBuild" \
         /home/mario/work/ \
         ${MNTPOINT}/work
 }

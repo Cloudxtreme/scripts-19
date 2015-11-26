@@ -91,6 +91,13 @@ if [ -d /var/endless ]; then
     # Chromium sandbox
     export CHROME_DEVEL_SANDBOX=/usr/local/bin/chrome-devel-sandbox
 else
+    if [ -e /trusty-amd64 ]; then
+        # Trustry 64 bit chroot
+        export PATH=/usr/lib/ccache:$PATH
+        export CCACHE_DIR=$HOME/work/endless/ccache-chroot/trusty-amd64
+        export CCACHE_PREFIX=icecc
+    fi
+
     # CHROMIUM
     export PATH=$HOME/work/chromium/depot_tools:$PATH
     export GYP_DEFINES="$GYP_DEFINES component=shared_library"

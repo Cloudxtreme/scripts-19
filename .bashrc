@@ -88,24 +88,26 @@ if [ -d /var/endless ]; then
     # Chromium sandbox
     export CHROME_DEVEL_SANDBOX=/usr/local/bin/chrome-devel-sandbox
 else
-    if [ -e /trusty-amd64 ]; then
-        # Trustry 64 bit chroot
-        export PATH=/usr/lib/ccache:$PATH
-        export CCACHE_DIR=$HOME/work/endless/ccache-chroot/trusty-amd64
-        export CCACHE_PREFIX=icecc
-    fi
-
     # CHROMIUM
     export PATH=$HOME/work/chromium/depot_tools:$PATH
     export GYP_DEFINES="$GYP_DEFINES component=shared_library"
     export CHROME_DEVEL_SANDBOX=$HOME/work/chromium/chrome_sandbox
 
+    if [ -e /trusty-amd64 ]; then
+        # Trusty 64 bit chroot
+        export PATH=/usr/lib/ccache:$PATH
+        export CCACHE_DIR=$HOME/work/endless/ccache-chroot/trusty-amd64
+
+	# Icecc does not seem to work well at all while in the chroot
+        #export CCACHE_PREFIX=icecc
+    else
+        # Icecc Integration outside any chroot (not using clang)
+        export GYP_DEFINES="$GYP_DEFINES clang=0 linux_use_debug_fission=0 linux_use_bundled_binutils=0"
+    fi
+
     # ccache defines needed for chromium
     export CCACHE_CPP2=yes
     export CCACHE_SLOPPINESS=time_macros
-
-    # Icecc Integration (not using clang)
-    export GYP_DEFINES="$GYP_DEFINES clang=0 linux_use_debug_fission=0 linux_use_bundled_binutils=0"
 
     # Icecc + clang (does not work, but it should)
     # http://mkollaro.github.io/2015/05/08/compiling-chromium-with-clang-and-icecc/

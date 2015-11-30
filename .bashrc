@@ -74,6 +74,8 @@ alias psc='ps xawf -eo pid,user,cgroup,args'
 alias ls='ls --color'
 alias enox='emacs-nox'
 
+# Make sure DISPLAY is always exported (useful for chroots)
+export DISPLAY=:0.0
 
 # ENDLESS
 

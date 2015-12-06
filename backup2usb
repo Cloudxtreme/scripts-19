@@ -209,11 +209,13 @@ function backup_work ()
         --exclude "endless/images" \
         --exclude "endless/ccache-chroot" \
         --exclude "endless/github/chromium-browser/out" \
+        --exclude "endless/github/chromium-browser-arm/out" \
         --exclude "endless/github/*deb" \
         --exclude "endless/gnome/inst" \
         --exclude "endless/gnome/webkitgtk*" \
         --exclude "endless/obs/home_msanchez_branches_eos_master_extra/webkit2gtk" \
         --exclude "WebKit/WebKitBuild" \
+        --exclude "WebKit-arm/WebKitBuild" \
         /home/mario/work/ \
         ${MNTPOINT}/work
 }

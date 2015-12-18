@@ -1,0 +1,72 @@
+#!/bin/bash -e
+#
+# Copyright (C) 2015 Mario Sanchez Prada.
+# Authors: Mario Sanchez Prada <mario@endlessm.com>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 (or later)
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+if [ $# -lt 1 ]; then
+    echo "Missing git clone parameters"
+    exit 1
+fi
+
+TMP_FILE=$(mktemp)
+git clone $@ 2>&1 | tee $TMP_FILE
+CLONED_DIR=$(grep "Cloning into" ${TMP_FILE} | cut -d "'" -f 2)
+rm -f ${TMP_FILE}
+cd "$(pwd)/${CLONED_DIR}/.git" 2> /dev/null || exit 1
+
+
+# 1. Setup right authorship details in .git/config
+
+echo "Adding authorship details in .git/config..."
+printf "
+[user]
+        name = Mario Sanchez Prada
+        email = mario@endlessm.com
+" >> config
+
+
+# 2. Enable commit hook to reference the relevant github issue
+
+echo "Enabling Endless-specific commit-msg hook .git/commit-msg..."
+
+# Need to quote the EOF marker so that no variable expansion in
+# the code below will be attempted, dumping it "as is".
+cat << 'EOF' > hooks/commit-msg
+#!/bin/bash
+
+# move this script to the .git/hooks directory for your repo. or to a global
+# git template directory. make sure to chmod +x this file
+
+branch=`git rev-parse --abbrev-ref HEAD`
+
+for repo in "sdk" "shell"; do
+    if [[ $branch == $repo/* ]]; then
+        number=`echo $branch | awk -F/ '{print $2}'`
+        link="[endlessm/eos-$repo#$number]"
+        grep -Fq "$link" $1 || {
+            echo "issue link: $link"
+            echo $link >> $1
+        }
+    fi
+done
+EOF
+chmod 755 hooks/commit-msg
+
+
+echo "-------"
+echo "Endless-specific quirks successfully applied"
+
+exit 0
+

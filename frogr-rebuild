@@ -1,0 +1,47 @@
+#!/bin/bash -e
+# Script to quickly rebuild and optionally run frogr using my local xdg-app environment.
+#
+# Usage: frogr-rebuild [--clean] [--run]
+
+FROGR_BASE_DIR="${HOME}/work/frogr/frogr"
+XDG_APP_BASE_DIR="${HOME}/work/xdg-app"
+XDG_APP_FROGR_DIR="${XDG_APP_BASE_DIR}/frogr"
+XDG_APP_REPOS_DIR="${XDG_APP_BASE_DIR}/repos"
+
+FROGR_APP_ID="org.gnome.frogr"
+
+DO_CLEAN=false
+DO_RUN=false
+
+while [ $# -ge 1 ]; do
+    if [ "${1}" == "--run" ]; then
+        DO_RUN=true
+    elif [ "${1}" == "--clean" ]; then
+        DO_CLEAN=true
+    fi
+    shift 1
+done
+
+cd ${FROGR_BASE_DIR}
+
+if ${DO_CLEAN}; then
+    echo "Passed --clean parameter. Running 'make clean' first..."
+    make clean
+fi
+
+echo "Building frogr..."
+xdg-app build ${XDG_APP_FROGR_DIR} ./autogen.sh --prefix=/app --enable-debug
+xdg-app build ${XDG_APP_FROGR_DIR} make -j4 V=1
+xdg-app build ${XDG_APP_FROGR_DIR} make install
+
+echo "Exporting newly built frogr to the xdg-app repository..."
+xdg-app build-export ${XDG_APP_REPOS_DIR} ${XDG_APP_FROGR_DIR}
+xdg-app repo-update ${XDG_APP_REPOS_DIR} ${XDG_APP_FROGR_DIR}
+
+if ${DO_RUN}; then
+    echo "Passed --run parameter. Running frogr..."
+    xdg-app run ${FROGR_APP_ID}
+fi
+
+echo "Done!"
+exit 0

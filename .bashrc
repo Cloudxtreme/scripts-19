@@ -101,6 +101,9 @@ else
 	# Icecc does not seem to work well at all while in the chroot
         #export CCACHE_PREFIX=icecc
     else
+	# Icecc toolchain (create with 'icecc-create-env /usr/bin/gcc /usr/bin/g++')
+	export ICECC_VERSION=$HOME/.icecc/06f067f5372b5b534ebf1fbbe84a0754.tar.gz
+
         # Icecc Integration outside any chroot (not using clang)
         export GYP_DEFINES="$GYP_DEFINES clang=0 linux_use_debug_fission=0 linux_use_bundled_binutils=0"
     fi

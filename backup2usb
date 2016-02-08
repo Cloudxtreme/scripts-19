@@ -183,7 +183,6 @@ function backup_home ()
         --exclude ".googleearth/Cache" \
         --exclude ".gvfs" \
         --exclude ".java" \
-        --exclude ".mozilla/firefox/isaro6og.default/Cache" \
         --exclude ".thumbnails" \
         --exclude ".thunderbird/retjvbnr.default/ImapMail" \
         /home/mario/ \

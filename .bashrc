@@ -77,6 +77,10 @@ alias enox='emacs-nox'
 # Make sure DISPLAY is always exported (useful for chroots)
 export DISPLAY=:0.0
 
+# ARCANIST
+export PATH=/opt/arcanist/arcanist/bin:$PATH
+source /opt/arcanist/arcanist/resources/shell/bash-completion
+
 # ENDLESS
 
 if [ -d /var/endless ]; then
@@ -116,3 +120,5 @@ else
     #export ICECC_VERSION=$HOME/work/chromium/clang.tar.gz
     #export ICECC_CLANG_REMOTE_CPP=1
 fi
+
+#. /bin/bashrc_extras

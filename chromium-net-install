@@ -9,6 +9,8 @@ OUTDIR=${1}
 TARGET=root@${2}
 BASEDIR=$(pwd)
 
+ssh ${TARGET} mkdir -p /usr/lib/chromium-browser/libs
+
 scp -r ${BASEDIR}/${OUTDIR}/lib*so ${TARGET}:/usr/lib/chromium-browser
 scp -r ${BASEDIR}/${OUTDIR}/lib/*so ${TARGET}:/usr/lib/chromium-browser/libs
 scp -r ${BASEDIR}/${OUTDIR}/chrome ${TARGET}:/usr/lib/chromium-browser/chromium-browser

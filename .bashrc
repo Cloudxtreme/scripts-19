@@ -100,6 +100,13 @@ else
 
 	# Icecc does not seem to work well at all while in the chroot
         #export CCACHE_PREFIX=icecc
+    elif [ -e /wily-amd64 ]; then
+        # Wily 64 bit chroot
+        export PATH=/usr/lib/ccache:$PATH
+        export CCACHE_DIR=$HOME/work/endless/ccache-chroot/wily-amd64
+
+	# Icecc does not seem to work well at all while in the chroot
+        #export CCACHE_PREFIX=icecc
     else
         # Icecc Integration outside any chroot (not using clang)
         export GYP_DEFINES="$GYP_DEFINES clang=0 linux_use_debug_fission=0 linux_use_bundled_binutils=0"

@@ -30,7 +30,7 @@ export PS1="\[\033[01;34m\]${debian_chroot:+($debian_chroot)}\u:\w \[\033[31m\]\
 # JHBUILD stuff
 parse_jhbuild ()
 {
-    env | grep "/home/mario/work/gnome/inst" > /dev/null && echo "jhbuild" || echo "\u"
+    env | grep "/home/mario/work/gnome/inst" > /dev/null && echo "(jhbuild)" || echo "\u"
 }
 export PS1="\[\033[01;34m\]${debian_chroot:+($debian_chroot)}$(parse_jhbuild):\w \[\033[31m\]\$(parse_git_branch)\$(parse_svn_branch)\[\033[00m\]$\[\033[00m\] "
 

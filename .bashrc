@@ -34,6 +34,15 @@ parse_jhbuild ()
 }
 export PS1="\[\033[01;34m\]${debian_chroot:+($debian_chroot)}$(parse_jhbuild):\w \[\033[31m\]\$(parse_git_branch)\$(parse_svn_branch)\[\033[00m\]$\[\033[00m\] "
 
+# xdg-app stuff
+parse_xdg_app ()
+{
+    [ -d /app ] && echo "(xdg-app)"
+}
+export PS1="\[\033[01;34m\]${debian_chroot:+($debian_chroot)}$(parse_xdg_app)$(parse_jhbuild):\w \[\033[31m\]\$(parse_git_branch)\$(parse_svn_branch)\[\033[00m\]$\[\033[00m\] "
+
+
+
 
 # ENVIRONMENT VARIABLES
 
